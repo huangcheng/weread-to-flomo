@@ -12,7 +12,9 @@
 
 ## 安装
 
-### 方式 A：通过 `npx skills`（推荐）
+> **🚧 npm 包还在内测验证中，暂未发布到 npm registry。** 现在请用「方式 A」走 GitHub 直接安装。「方式 B」`npx weread-to-flomo` 会在 v0.1.0 正式发布到 npm 后启用。
+
+### 方式 A：通过 `npx skills`（推荐，目前唯一可用）
 
 如果你已经在用 [`skills` CLI](https://www.npmjs.com/package/skills)，一行就装好：
 
@@ -22,9 +24,11 @@ npx skills huangcheng/weread-to-flomo
 
 `skills` 会从本仓库直接拉取 skill 文件并放到 `~/.agents/skills/weread-to-flomo/`，所有支持 skill 的 agent 工具（Claude Code、Codex、OpenCode、Gemini CLI、Qoder 等）共用。
 
-### 方式 B：通过 `npx weread-to-flomo`
+### 方式 B：通过 `npx weread-to-flomo`（**待 v0.1.0 发布后启用**）
 
-如果你没有 `skills` CLI，也可以用本包附带的安装器：
+> ⚠️ 该方式当前不可用 —— 包还没上 npm。下面写法是发布之后的目标使用方式，先记录在这里；运行会得到 npm 404。
+
+如果你没有 `skills` CLI，可以用本包附带的安装器：
 
 ```bash
 npx weread-to-flomo
