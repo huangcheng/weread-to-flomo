@@ -60,5 +60,8 @@ test('overwrites when force=true', async () => {
   assert.equal(result.copied, 1);
   assert.equal(await fs.readFile(path.join(dest, 'a.md'), 'utf8'), 'NEW');
   // force overwrite removes the old tree first, so stale.md should be gone
-  await assert.rejects(() => fs.readFile(path.join(dest, 'stale.md'), 'utf8'));
+  await assert.rejects(
+    () => fs.readFile(path.join(dest, 'stale.md'), 'utf8'),
+    { code: 'ENOENT' }
+  );
 });
