@@ -1,0 +1,38 @@
+{
+  "name": "weread-to-flomo",
+  "version": "0.1.0",
+  "description": "把微信读书的划线与想法导出到 flomo 的 Claude Agent Skill（通过 flomo MCP）",
+  "type": "module",
+  "bin": {
+    "weread-to-flomo": "bin/install.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "skill/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "skill",
+    "weread",
+    "flomo",
+    "mcp",
+    "微信读书",
+    "浮墨"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/<your-username>/weread-to-flomo.git"
+  },
+  "homepage": "https://github.com/<your-username>/weread-to-flomo#readme"
+}
