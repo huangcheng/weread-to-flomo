@@ -19,7 +19,7 @@
 如果你已经在用 [`skills` CLI](https://www.npmjs.com/package/skills)，一行就装好：
 
 ```bash
-npx skills huangcheng/weread-to-flomo
+npx skills add huangcheng/weread-to-flomo
 ```
 
 `skills` 会从本仓库直接拉取 skill 文件并放到 `~/.agents/skills/weread-to-flomo/`，所有支持 skill 的 agent 工具（Claude Code、Codex、OpenCode、Gemini CLI、Qoder 等）共用。
