@@ -51,12 +51,21 @@ arguments:
 > 不要把方括号 `[` `]` 放进 `keywords` —— flomo 搜索引擎对方括号的处理不可靠。`wr:hl:xxxx` 这个核心串就足以唯一定位。
 
 判断命中：
-- 返回数组中**任一**条 `content` 包含完整字符串 `[wr:hl:5a8d3f2e1234abcd]`（含方括号、含完整 ID）即算命中
-- 仅模糊命中（例如另一条 memo 在引用文本里恰好出现了同样的 ID）也算命中 —— **优先少写不优先多写**
+
+⚠️ **flomo MCP 回包里 `content` 字段会自动 escape 部分 markdown 元字符**。实测 2026-05-16，写入 `[wr:hl:216211_14_2847-2872]` 的 memo，`memo_search` / `memo_batch_get` 等接口回包的 `content` 字段实际是 `\[wr:hl:216211\_14\_2847-2872\]`（`[`、`]`、`_` 前都加了反斜杠）。flomo 的 UI 渲染层会把这些反斜杠脱掉，用户看到的依旧是干净的 `[wr:hl:...]`，但**子串匹配必须在去 escape 后的字符串上做**，否则永远命中失败。
+
+正确的判定步骤：
+
+1. 取 `memo.content`
+2. 把里面所有反斜杠去掉：`const normalized = memo.content.replace(/\\/g, '')`
+3. 在 `normalized` 里查找完整字符串 `[wr:hl:5a8d3f2e1234abcd]`（含方括号、含完整 ID）
+4. 任一条 memo 满足上述匹配即算命中
 
 命中后：
 - 不调 `memo_create`
 - 把该条加入「已跳过」列表，最终汇报给用户
+
+> **不要**仅用 `memo_search` 返回结果的 `relevance` 阈值判定命中。实测同一关键词下，无关 memo 也能拿到 0.5 的 relevance。relevance 仅用来排序，不可作为命中信号；必须做上述的去 escape 子串匹配。
 
 ---
 
@@ -72,7 +81,17 @@ arguments:
   limit: 200
 ```
 
-然后对返回的 `content` 用正则抽出所有已存在 ID：
+然后对返回的 `content` 用正则抽出所有已存在 ID。**先做 §3 的去 escape 处理再跑正则**，否则 `[`/`]`/`_` 周围的反斜杠会让正则匹配失败：
+
+```js
+const normalized = memo.content.replace(/\\/g, '');
+const re = /\[wr:(hl|tk):([^\]]+)\]/g;
+for (const m of normalized.matchAll(re)) {
+  existing.add(`${m[1]}:${m[2]}`);   // 例如 "hl:216211_14_2847-2872"
+}
+```
+
+正则本身（去 escape 之后用）：
 
 ```regex
 \[wr:(hl|tk):([^\]]+)\]
@@ -126,7 +145,10 @@ flomo 单次 `memo_search` 上限取决于服务端。本文档约定 200 作为
 ## 7. 自检清单（探测前/写入前）
 
 - [ ] 探测调用的 `keywords` 没有方括号？
+- [ ] 命中判定**先做** `content.replace(/\\/g, '')` 去 escape，再做子串匹配？（flomo 回包会自动 escape `[`/`]`/`_`）
 - [ ] 命中判断检查的是完整字符串 `[wr:hl:...]`（含方括号），不是子串 `wr:hl:...`？
+- [ ] 没有用 `relevance` 阈值代替子串匹配？（relevance 不可靠）
 - [ ] 批量优化里的 `tag` 参数没有前导 `#` 或 `/`？
+- [ ] 批量优化里的正则在去 escape 后的字符串上跑？
 - [ ] 写入时生成的标记格式严格匹配 `[wr:(hl|tk):{原 ID}]`？
 - [ ] 标记是 memo 的最后一行，前面恰好一个空行？

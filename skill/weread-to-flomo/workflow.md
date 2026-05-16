@@ -6,9 +6,16 @@
 
 ## 0. 通用前置（每次调用开头都做）
 
-1. 读 `SKILL.md`「启动流程」并执行 6 状态探测（先 weread 后 flomo）。
+**强制顺序，不要跳步、不要并发，不要因为「上下文里看起来工具都在」就省略**：
+
+1. **完整执行 `SKILL.md` 启动流程的全部 6 状态探测**（先 weread 后 flomo）。**两侧都通过**之前不要碰任何 weread API、也不要碰任何 flomo MCP 工具（除了用作探活的 `get_format_guide`）。
+   - weread 探测：尝试一次最小 `/user/notebooks count=1` 请求；按返回码/网络错误分支映射到 SKILL.md 的 3 个 weread 状态文案
+   - flomo 探测：调一次 `get_format_guide`（无副作用），按返回成功/鉴权失败/工具不可见映射到 3 个 flomo 状态文案
+   - 一个常见反模式：「我看到 `mcp__flomo__memo_create` 在工具列表里就当 flomo 已经 ready 了，不再调 `get_format_guide`」—— **不行**。工具在列表里只代表 transport 已连接，不代表 token 仍然有效或服务端实际可用。`get_format_guide` 是廉价探活，必须做。
 2. 读取 weread-skills 的当前 `version`（在其 `SKILL.md` frontmatter 里），后续每次调 weread API 都把它当 `skill_version` 传入；**不要硬编码版本号**。
 3. 解析用户意图（见下面「意图路由」），不要静默选默认范围。
+
+> 这一节的强约束是为了避免一个真实发生过的失败：浏览模式下，agent 看到「weread 通了」就直接拉了书架数据展示给用户；选完书后才发现 flomo MCP 根本没配，用户做了无用的浏览操作还被打断。**只要本次会话可能涉及 flomo 写入，就必须在第一步把两侧都探完。**
 
 ## 1. 意图路由
 
