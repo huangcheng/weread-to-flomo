@@ -1,7 +1,7 @@
 ---
 name: weread-to-flomo
-description: 把微信读书的划线与想法导出到 flomo。当用户说「导出微信读书笔记」「同步划线到 flomo」「weread 笔记 → 浮墨」「全量导出」「把书架里的笔记搬到浮墨」「单条导出这条划线/想法」时调用；也支持先「浏览」笔记本（列书 → 看划线/想法）再决定要不要导出。依赖已安装的 weread-skills 与已配置的 flomo MCP。
-version: 0.1.0
+description: 把微信读书的划线与想法导出到 flomo。当用户说「导出微信读书笔记」「同步划线到 flomo」「weread 笔记 → 浮墨」「全量导出」「把书架里的笔记搬到浮墨」「单条导出这条划线/想法」「把第 X 章导出到 flomo」「这一章的笔记搬到浮墨」「chapter export」时调用；也支持先「浏览」笔记本（列书 → 看划线/想法）再决定要不要导出。依赖已安装的 weread-skills 与已配置的 flomo MCP。
+version: 0.1.1
 ---
 
 # weread-to-flomo — 微信读书 → flomo
@@ -14,6 +14,7 @@ version: 0.1.0
 
 - 全量导出：「把所有书的笔记同步到 flomo」「全量导出 weread 笔记」「书架里有笔记的都导一份」
 - 单本导出：「把《XX》的笔记导出到 flomo」「同步《YY》的划线和想法到浮墨」
+- 章节导出：「把《XX》第 N 章导出到 flomo」「这一章的笔记搬到浮墨」「chapter export」
 - 单条导出：「把刚才那条划线 / 想法导出到 flomo」
 - 浏览：「我有哪些书有笔记」「列一下有笔记的书」「先看看再决定导不导」「展开某本书的划线」
 
@@ -66,11 +67,12 @@ version: 0.1.0
 
 只有两侧都通过才进入用户意图分流。
 
-## 三种导出范围（用户意图路由）
+## 四种导出范围（用户意图路由）
 
 | 范围 | 用户表达示例 | 行为 |
 |------|--------------|------|
 | 单条 | 「把这条划线导出到 flomo」「这条想法搬到 flomo」 | 用上下文里的 `bookmarkId` / `reviewId` 定位；找不到就让用户贴片段，再用 `/book/bookmarklist` 文本匹配。`memo_search` 去重 → 创建一条 memo |
+| 章节 | 「把《XX》第 N 章导出到 flomo」「这一章的笔记搬到浮墨」 | 见 `workflow.md` §3.5：识别书 → 取该书 bookmarklist + reviews → 按 `chapterUid` 过滤 → 去重 → 让用户确认（或小批量 fast-path）→ 批量写入 |
 | 单本 | 「把《XX》的笔记导出到 flomo」「同步《YY》的划线和想法到浮墨」 | 见 `workflow.md` 单本流程：识别书 → `/book/bookmarklist` + `/review/list/mine` → 去重 → 让用户确认 → 批量写入 |
 | 全部 | 「把所有书的笔记都同步到 flomo」「全量导出」「把书架里有笔记的都导一份」 | 翻页拉 `/user/notebooks` 直到 `hasMore=0`，展示按本汇总（划线 / 想法 / 去重后待新增数）的表格，**必须用户显式确认**后再逐本处理；每完成一本立即汇报；从不静默跑 |
 
@@ -120,3 +122,18 @@ version: 0.1.0
 本 Skill 可通过 `npx skills add huangcheng/weread-to-flomo`（目前唯一可用方式）安装；默认位置 `~/.agents/skills/weread-to-flomo/` 与具体 agent 工具解耦。其他工具（Claude Code、Codex、OpenCode、Gemini CLI、Qoder 等）可通过自身配置或符号链接把 `~/.agents/skills/` 纳入加载路径；如果你想直接装到某工具的目录，请到仓库下载 zip 并手动解压（v0.1.0 发布到 npm 后会启用 `npx weread-to-flomo --target=<路径>` 的方式）。
 
 Skill 文件本身遵循「YAML frontmatter + Markdown」约定，文件层面与工具无关；但调用方需要支持 weread-skills 与 flomo MCP（前置依赖一致）。
+
+## 与 weread-skills 的协作（上下文复用）
+
+如果用户已经在用 `weread-skills` 浏览过书，对话上下文里通常已经有 `bookId`、`bookmarklist.updated[]`、`reviews[]`、`chapters[]` 等数据。本 skill 在以下场景应**复用上下文**而非重新拉接口：
+
+- 用户刚展示过《XX》的笔记（同一会话内）→ 直接用上下文里的 `bookmarklist`，不要重新调 `/book/bookmarklist`
+- 用户刚通过 weread-skills 看过书架 → 跳过 `workflow.md` §2.1 的 `/user/notebooks` 调用
+- 上下文里已有 `chapters[]` → 章节导出（§3.5）的章节定位直接走本地匹配
+
+复用判断：
+- 上下文中是否存在该 `bookId` 的 `updated[]` 数组？
+- 是同一 session、未跨大 turn（>30 次工具调用 / 长时间停顿）？
+- 数据完整（不是中途截断的部分结果）？
+
+不确定时宁可重新拉，不要拿过期数据。无论是否复用，**启动流程探活仍必做**（见上方「启动流程」）—— flomo MCP 的可用性不能靠上下文推断。

@@ -1,6 +1,6 @@
 {
   "name": "weread-to-flomo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "把微信读书的划线与想法导出到 flomo 的 Claude Agent Skill（通过 flomo MCP）",
   "type": "module",
   "bin": {
