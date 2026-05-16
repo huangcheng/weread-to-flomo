@@ -1,5 +1,7 @@
 # weread-to-flomo
 
+> **🧩 这是一个 Agent Skill 项目** — 不是普通 CLI 工具。它会被装到你的 agent 工具的 skill 目录里，由 Claude / Codex / OpenCode / Gemini CLI / Qoder 等 agent 在你自然语言对话中调用。仓库元信息见 [`skill.json`](./skill.json)，技能本体见 [`skill/weread-to-flomo/`](./skill/weread-to-flomo/)。
+
 把微信读书的**划线**与**想法/点评**导出为独立 flomo memo 的 Agent Skill。重复运行只追加新增内容、不会重复写。也支持先「浏览」笔记本再决定是否导出。
 
 ## 工作机制

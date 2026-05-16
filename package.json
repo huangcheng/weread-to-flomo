@@ -10,6 +10,7 @@
     "bin/",
     "lib/",
     "skill/",
+    "skill.json",
     "README.md",
     "LICENSE"
   ],
@@ -20,8 +21,11 @@
     "node": ">=18"
   },
   "keywords": [
+    "agent-skill",
     "claude",
     "claude-code",
+    "codex",
+    "opencode",
     "skill",
     "weread",
     "flomo",
