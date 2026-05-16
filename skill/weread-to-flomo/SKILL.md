@@ -117,6 +117,6 @@ version: 0.1.0
 
 ## 安装位置（与 agent 工具无关）
 
-本 Skill 由 npm 包 `weread-to-flomo` 安装，默认装到 `~/.agents/skills/weread-to-flomo/`，与具体 agent 工具解耦。其他工具（Claude Code、Codex、OpenCode、Gemini CLI、Qoder 等）可通过自身配置或符号链接把 `~/.agents/skills/` 纳入加载路径；如果你想直接装到某工具的目录，安装时使用 `--target=<绝对路径>` 即可。
+本 Skill 可通过 `npx skills huangcheng/weread-to-flomo`（推荐）或 `npx weread-to-flomo` 安装；默认位置 `~/.agents/skills/weread-to-flomo/` 与具体 agent 工具解耦。其他工具（Claude Code、Codex、OpenCode、Gemini CLI、Qoder 等）可通过自身配置或符号链接把 `~/.agents/skills/` 纳入加载路径；如果你想直接装到某工具的目录，安装时使用 `--target=<绝对路径>` 即可。
 
 Skill 文件本身遵循「YAML frontmatter + Markdown」约定，文件层面与工具无关；但调用方需要支持 weread-skills 与 flomo MCP（前置依赖一致）。

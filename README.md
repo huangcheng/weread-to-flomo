@@ -10,7 +10,19 @@
 
 ## 安装
 
-### 一行命令
+### 方式 A：通过 `npx skills`（推荐）
+
+如果你已经在用 [`skills` CLI](https://www.npmjs.com/package/skills)，一行就装好：
+
+```bash
+npx skills huangcheng/weread-to-flomo
+```
+
+`skills` 会从本仓库直接拉取 skill 文件并放到 `~/.agents/skills/weread-to-flomo/`，所有支持 skill 的 agent 工具（Claude Code、Codex、OpenCode、Gemini CLI、Qoder 等）共用。
+
+### 方式 B：通过 `npx weread-to-flomo`
+
+如果你没有 `skills` CLI，也可以用本包附带的安装器：
 
 ```bash
 npx weread-to-flomo
@@ -18,11 +30,11 @@ npx weread-to-flomo
 
 会交互式询问安装位置，三选一：
 
-- **全局（推荐）**：`~/.agents/skills/weread-to-flomo/` —— 与具体 agent 工具解耦的 skill 目录，所有支持 skill 加载的 agent 工具（Claude Code、Codex、OpenCode、Gemini CLI、Qoder 等）共用
+- **全局（推荐）**：`~/.agents/skills/weread-to-flomo/` —— 与具体 agent 工具解耦的 skill 目录，所有支持 skill 加载的 agent 工具共用
 - **项目级**：`<当前目录>/.agents/skills/weread-to-flomo/`，仅在本项目内可见
 - **自定义路径**：直接指定绝对路径（用于把 skill 装到某个特定 agent 工具的目录里，例如 `~/.claude/skills/`）
 
-### 非交互式
+非交互式：
 
 ```bash
 npx weread-to-flomo --global              # 装到 ~/.agents/skills/
