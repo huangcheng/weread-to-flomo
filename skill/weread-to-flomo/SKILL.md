@@ -117,6 +117,26 @@ version: 0.1.1
 - **不主动删 flomo memo**：weread 里删了划线，flomo 里对应 memo 保留不动
 - **不擅自变形**：不改划线/想法原文（除去首尾空白），不替用户编辑内容；不输出文案性的「总结」或 AI 解读
 
+## 写错时的修正流程
+
+flomo MCP **不暴露删除接口**，所以一旦 `memo_create` 写入了内容有偏差的 memo（视觉相近字符替换、章节标题错、标签写错、误把段内换行变成两段等），agent **不能**自行清理。修正路径如下：
+
+1. **立刻告诉用户问题**：写完后第一时间在对话里指出偏差，不要等用户察觉。包含：
+   - memo 的 `id`（来自 `memo_create` 返回值，如 `MjM3MDQ3MDU5`）
+   - 偏差是什么（例：「弯引号 `“”` 被写成 ASCII `"`」）
+   - 根因（例：「上一次构造 content 时从对话预览回打，违反 format.md §8.1」）
+2. **请用户手动删**：MCP 没有 delete RPC，只能让用户去 https://flomoapp.com/mine 用搜索 `wr:hl:<bookmarkId>` 或 `wr:tk:<reviewId>` 定位后删除。同时附上去重标记字符串（如 `wr:hl:41598972_7_1931-2138`）方便复制
+3. **等用户回复「删了」/「OK」/「ok 了」**再进入下一步；不要假定用户动作完成
+4. **重新写入**：按 `format.md` §8.1 的硬约束重做（**必经路径**：渲染到临时文件 → `Read` 工具读出字面字节 → `memo_create`），不要再从对话预览回打。重写前可以再调一次 `memo_search` 确认无残留（可选）
+5. **汇报新 id**：写入后告诉用户新 memo 的 id，方便用户校核
+
+**禁止**：
+- 用「这个等会儿一起改」的语气把修正延后，让用户记账
+- 在用户没确认删除前就 `memo_create` 写新版（会双写）
+- 把多条偏差合并到一次回复里——每条都要单独的 id + 删除指引，否则用户搜不到
+
+预防胜于修正：写入前严格执行 `format.md` §8 自检清单（特别是 §8.1 内容保真硬约束），可以避免 90% 的偏差。**写入后**立即按 `format.md` §8.1.2 跑 byte-exact audit（`memo_batch_get` + 脚本对比关键码位），可以在偏差扩散到下一条之前抓住它。**两层缺一不可**——预防失败时 audit 是最后一道闸。
+
 ## 安装位置（与 agent 工具无关）
 
 本 Skill 可通过 `npx skills add huangcheng/weread-to-flomo`（目前唯一可用方式）安装；默认位置 `~/.agents/skills/weread-to-flomo/` 与具体 agent 工具解耦。其他工具（Claude Code、Codex、OpenCode、Gemini CLI、Qoder 等）可通过自身配置或符号链接把 `~/.agents/skills/` 纳入加载路径；如果你想直接装到某工具的目录，请到仓库下载 zip 并手动解压（v0.1.0 发布到 npm 后会启用 `npx weread-to-flomo --target=<路径>` 的方式）。

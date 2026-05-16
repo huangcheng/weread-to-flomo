@@ -183,6 +183,18 @@ WeRead 在不同字段里给了**三种章节标识**，构造数据时极易写
 2. 调 `/book/bookmarklist`（划线）或 `/review/list/mine`（想法），在返回的 `markText` / `review.content` 里做子串匹配
 3. 多个候选时编号让用户选；零个时说「没找到，请确认书名或贴更具体的片段」
 
+#### 3.1.1 候选列表渲染规则（硬约束）
+
+向用户出示候选列表（无论来自子串匹配、章节内全部条目，还是单条选择菜单）时，**必须一次性渲染完整片段**：
+
+- 每条候选的预览文本控制在 **40 字以内**（中文按字符算），超长用 `…` 截断尾部；不要截首
+- **禁止**先发占位行（如「待显示」「TBD」「内容稍后」）再补全。这会触发用户「这是什么意思？」的反复澄清，把单次导出变成多回合 chat
+- **禁止**只渲染前 1–3 条然后省略后面的「以此类推」；列表不长（≤15 条）就全展示
+- 若条目 >15，按章节/类型先分桶，每桶展示前 5 条 + 「该章节还有 N 条，要全展示吗？」提示
+- 渲染来源同 `format.md` §8.1：从临时文件 / 脚本返回值取字面字节，不要凭印象拼装片段
+
+理由：候选列表是用户做选择的依据。占位符相当于让用户在信息不全的状态下做决策，必然触发追问；agent 的「先给框架再补内容」协作模式适用于规划文档，不适用于选择菜单。
+
 ### 3.2 去重
 
 按 `dedup.md` 的方式调一次 `memo_search`，命中即告诉用户「这条已经在 flomo 里了，跳过」并停止。
@@ -264,6 +276,8 @@ const chapterReviews = allReviews.filter(r => r.review.chapterUid === targetUid)
 
 按 `dedup.md` 的批量优化方式：先 `memo_search keywords:"wr:hl" tag:"微信读书/{清洗后书名}" limit:200` 拿到这本书已存在 memo 的 ID 集合，本地比对每条划线/想法。
 
+⚠️ **批量 probe 索引延迟**：`memo_search` 标签过滤路径对刚写入的 memo 有几十分钟级别的不可见期（实证）。批量 probe 拿到的 `existing` 集合**必须**叠加一层 in-session 内存集合（每次 `memo_create` 成功后立即把 `(类型, ID)` 加入），否则同一会话连写两次会重复。详见 `dedup.md` §4.4。
+
 把汇总展示给用户：
 
 ```
@@ -305,8 +319,12 @@ const chapterReviews = allReviews.filter(r => r.review.chapterUid === targetUid)
 ```
 tool: memo_create
 arguments:
-  content: <按模板渲染的正文>
+  content: <按模板渲染的正文，必须来自一次性渲染产物，不能从对话预览回打>
 ```
+
+⚠️ **content 不能回打**：渲染好的 memo 字符串必须先落到临时文件（如 `/tmp/<book>_memos.json`），写入时通过 `Read` 工具取出字面字节再喂给 `memo_create`。绝对不要从 agent 自己刚才在对话或工具结果里打印的预览中复制粘贴重输——中文弯引号 `""` / 长破折号 `—` / 中文省略号 `…` 极易被静默替换成 ASCII 等价物，违反 SKILL.md 核心规则 5「不擅自变形」。详见 `format.md` §8.1。
+
+⚠️ **写完立即 audit**：每条 `memo_create` 返回后，立刻 `memo_batch_get` 取回 + 跑 byte-exact 对比脚本，发现偏差立即按 SKILL.md「写错时的修正流程」处理。详见 `format.md` §8.1.2。批量场景的抽样规则也在 §8.1.2。
 
 不传 `created_at`；让 flomo 用当前时间，方便用户在「每日回顾」里看到本次导出。
 
