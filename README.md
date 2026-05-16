@@ -71,19 +71,109 @@ curl -L https://cdn.weread.qq.com/skills/weread-skills.zip -o weread-skills.zip
 mkdir -p ~/.agents/skills && unzip weread-skills.zip -d ~/.agents/skills/
 ```
 
-然后设置环境变量（apikey 申请方式参考 weread-skills 的 SKILL.md）：
+然后让 weread-skills 能读到你的 apikey（环境变量 `WEREAD_API_KEY`）。下面按从「最安全」到「最简单」三档列出做法 —— 三大平台都给了。**任选一种**即可。
+
+> apikey 申请方式见 weread-skills 自带的 SKILL.md。下面 `wrk-你的apikey` 是占位符。
+
+#### 推荐：用密码管理器存，shell 启动时取
+
+不在任何配置文件里留明文 token，shell 启动时从密码管理器即时取出。配置文件即使误传到 GitHub 也不泄露。
+
+**1Password CLI（macOS / Linux / Windows 都可用）**
+
+先把 token 存到 1Password 一个条目里（例如 vault 名 `Personal`、条目 `WeRead`、字段 `api-key`），然后：
 
 ```bash
-export WEREAD_API_KEY=wrk-你的apikey
+# macOS / Linux：~/.zshrc 或 ~/.bashrc
+export WEREAD_API_KEY="$(op read 'op://Personal/WeRead/api-key')"
 ```
 
-Windows PowerShell：
+```powershell
+# Windows：$PROFILE
+$env:WEREAD_API_KEY = (op read 'op://Personal/WeRead/api-key')
+```
+
+Bitwarden CLI 同理：`bw get password weread-api-key`（先 `bw unlock` 拿到 session）。
+
+#### 折中：操作系统自带的密钥库
+
+如果不想装第三方 CLI，可以用系统自带：
+
+**macOS（Keychain）**
+
+```bash
+# 存（一次）
+security add-generic-password -a "$USER" -s weread-api-key -w 'wrk-你的apikey'
+
+# ~/.zshrc 里读
+export WEREAD_API_KEY="$(security find-generic-password -a "$USER" -s weread-api-key -w)"
+```
+
+**Linux（libsecret，需要 GNOME Keyring / KWallet / 其他兼容 backend）**
+
+```bash
+# 存（一次，会弹出 GUI 提示输入 token）
+secret-tool store --label='WeRead API key' service weread-api-key
+
+# ~/.bashrc 或 ~/.zshrc
+export WEREAD_API_KEY="$(secret-tool lookup service weread-api-key)"
+```
+
+无图形会话的 Linux（服务器、WSL 等）请直接用 1Password/Bitwarden CLI 或 `pass`。
+
+**Windows（Credential Manager + PowerShell `CredentialManager` 模块）**
+
+```powershell
+# 装一次
+Install-Module CredentialManager -Scope CurrentUser
+
+# 存（一次；密码框里粘贴 wrk-xxxx，用户名随便填）
+$cred = Get-Credential -UserName 'weread' -Message '粘贴 WeRead apikey'
+New-StoredCredential -Target 'weread-api-key' -Credentials $cred -Persist LocalMachine
+
+# $PROFILE 里读
+$env:WEREAD_API_KEY = (Get-StoredCredential -Target 'weread-api-key').GetNetworkCredential().Password
+```
+
+#### 最简单（也最不安全）：直接写在 shell 配置里
+
+只建议本机自用、且 shell 配置**绝不**进版本控制时使用。
+
+**macOS / Linux** — 加到 `~/.zshrc` / `~/.bashrc`：
+
+```bash
+export WEREAD_API_KEY='wrk-你的apikey'
+```
+
+**Windows PowerShell** — 临时（当前会话）：
 
 ```powershell
 $env:WEREAD_API_KEY = 'wrk-你的apikey'
-# 持久化（需重启会话生效）：
+```
+
+或者持久（写入用户级环境变量，**会以明文存在注册表里**）：
+
+```powershell
 [Environment]::SetEnvironmentVariable('WEREAD_API_KEY', 'wrk-你的apikey', 'User')
 ```
+
+#### 验证
+
+任意 shell 重启后，执行：
+
+```bash
+# macOS / Linux
+echo $WEREAD_API_KEY | head -c 4    # 应该输出 wrk-
+```
+
+```powershell
+# Windows
+$env:WEREAD_API_KEY.Substring(0, 4)  # 应该输出 wrk-
+```
+
+输出 `wrk-` 说明已经拿到。然后重启你的 agent CLI / IDE 让它继承这个变量。
+
+> 关于 flomo MCP token：它由你的 agent 工具持久化（Claude Code 是 `~/.claude.json`，其他工具按自身约定），首次配置后 agent 会记住，不需要你每次重设。本 skill 不接触 flomo token —— 它直接由 MCP 服务端验证。
 
 ### 2. 配置 flomo MCP
 
