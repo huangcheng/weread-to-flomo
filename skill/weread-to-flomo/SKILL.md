@@ -1,6 +1,6 @@
 ---
 name: weread-to-flomo
-description: 把微信读书的划线与想法导出到 flomo。当用户说「导出微信读书笔记」「同步划线到 flomo」「weread 笔记 → 浮墨」「把书架里的笔记搬到浮墨」时调用；也支持先「浏览」笔记本（列书 → 看划线/想法）再决定要不要导出。依赖已安装的 weread-skills 与已配置的 flomo MCP。
+description: 把微信读书的划线与想法导出到 flomo。当用户说「导出微信读书笔记」「同步划线到 flomo」「weread 笔记 → 浮墨」「全量导出」「把书架里的笔记搬到浮墨」「单条导出这条划线/想法」时调用；也支持先「浏览」笔记本（列书 → 看划线/想法）再决定要不要导出。依赖已安装的 weread-skills 与已配置的 flomo MCP。
 version: 0.1.0
 ---
 
@@ -20,7 +20,7 @@ version: 0.1.0
 ## 前置依赖
 
 1. **weread-skills**：必须已安装在同一 Claude 实例。本 Skill 不直接访问微信读书 API，而是通过该 skill 文档中的统一入口 `POST https://i.weread.qq.com/api/agent/gateway` 调用。安装/配置失败时按下面「启动流程」给出对应中文提示，并指向 README 第 1 步。
-2. **`WEREAD_API_KEY` 环境变量**：格式 `wrk-xxxx`。未设置或失效时按「启动流程」给出对应提示。
+2. **`WEREAD_API_KEY` 环境变量**：格式 `wrk-xxxx`。未设置或失效时按下面「启动流程」给出对应中文提示，并指向 README 第 1 步。
 3. **flomo MCP**：在 Claude Code 配置中启用 `https://flomoapp.com/mcp`（streamable-http，Bearer Token）。本 Skill 调用 `memo_search`、`memo_create`、`get_format_guide`。配置缺失或鉴权失败时按「启动流程」提示，并指向 README 第 2 步。
 
 ## 能力一览
@@ -114,3 +114,9 @@ version: 0.1.0
 - **不调 `memo_update`**：本版本只追加。weread 里改了划线，flomo 里那条不会跟着改
 - **不主动删 flomo memo**：weread 里删了划线，flomo 里对应 memo 保留不动
 - **不擅自变形**：不改划线/想法原文（除去首尾空白），不替用户编辑内容；不输出文案性的「总结」或 AI 解读
+
+## 安装位置（与 agent 工具无关）
+
+本 Skill 由 npm 包 `weread-to-flomo` 安装，默认装到 `~/.agents/skills/weread-to-flomo/`，与具体 agent 工具解耦。其他工具（Claude Code、Codex、OpenCode、Gemini CLI、Qoder 等）可通过自身配置或符号链接把 `~/.agents/skills/` 纳入加载路径；如果你想直接装到某工具的目录，安装时使用 `--target=<绝对路径>` 即可。
+
+Skill 文件本身遵循「YAML frontmatter + Markdown」约定，文件层面与工具无关；但调用方需要支持 weread-skills 与 flomo MCP（前置依赖一致）。
