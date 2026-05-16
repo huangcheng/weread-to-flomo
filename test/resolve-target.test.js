@@ -26,3 +26,10 @@ test('missing home for user scope throws', () => {
     /home directory not available/
   );
 });
+
+test('missing cwd for project scope throws', () => {
+  assert.throws(
+    () => resolveTarget({ scope: 'project', home: '/h', cwd: '' }),
+    /cwd not available/
+  );
+});
