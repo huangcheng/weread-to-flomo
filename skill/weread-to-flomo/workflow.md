@@ -324,6 +324,8 @@ arguments:
 
 ⚠️ **content 不能回打**：渲染好的 memo 字符串必须先落到临时文件（如 `/tmp/<book>_memos.json`），写入时通过 `Read` 工具取出字面字节再喂给 `memo_create`。绝对不要从 agent 自己刚才在对话或工具结果里打印的预览中复制粘贴重输——中文弯引号 `""` / 长破折号 `—` / 中文省略号 `…` 极易被静默替换成 ASCII 等价物，违反 SKILL.md 核心规则 5「不擅自变形」。详见 `format.md` §8.1。
 
+⚠️ **调用前预检**：每次 `memo_create` 之前跑一次「码位计数」预检（`format.md` §8.1.4），把 content 和 source 的关键 Unicode 码位计数对比；不通过就不发请求。实证：连续批量写时 ASCII `:` 替换 U+FF1A `：` 是高频错误（本会话 41 条 memo 中触发 3 次）。
+
 ⚠️ **写完立即 audit**：每条 `memo_create` 返回后，立刻 `memo_batch_get` 取回 + 跑 byte-exact 对比脚本，发现偏差立即按 SKILL.md「写错时的修正流程」处理。详见 `format.md` §8.1.2。批量场景的抽样规则也在 §8.1.2。
 
 不传 `created_at`；让 flomo 用当前时间，方便用户在「每日回顾」里看到本次导出。
