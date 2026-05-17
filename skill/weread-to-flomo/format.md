@@ -151,10 +151,14 @@ JS 实现参考：
 ```js
 function cleanTag(rawTitle, bookId) {
   let t = rawTitle.trim()
-    .replace(/[<>#""''""]/g, '')           // 删除 U+003C/3E/23/201C/201D/2018/2019
-    .replace(/[：:—–-]/g, '_')               // 副标题分隔
-    .replace(/\//g, '-')                     // 防多级标签
-    .replace(/[\s 　]/g, '_')       // 各种空白
+    // 删除 < > # 与中文弯引号 U+201C/U+201D/U+2018/U+2019。
+    // 用 \u 转义而非字面字符 —— markdown/编辑器/Edit 工具会把弯引号字面量
+    // 静默替换为 ASCII 直引号（实测发生过：本文件早期版本曾把整组弯引号
+    // 变成 ASCII，导致清洗失效）。\u 转义可在源里保住字节。
+    .replace(/[<>#\u201C\u201D\u2018\u2019]/g, '')
+    .replace(/[\uFF1A:\u2014\u2013-]/g, '_')   // 副标题分隔（U+FF1A 全角冒号 / U+2014 长破折号 / U+2013 短破折号）
+    .replace(/\//g, '-')                          // 防多级标签
+    .replace(/[\s\u00A0\u3000]/g, '_')           // 各种空白（含 NBSP / 全角空格）
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '');
   return t || `book_${bookId}`;
